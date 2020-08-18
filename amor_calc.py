@@ -1,4 +1,36 @@
-def get_info():
+def get_info(settings_file=True):
+    if settings_file:
+        load_file = ""
+        while load_file != "y" and load_file != "n":
+            load_file = input("Would you like to load a settings file? (y/n):\n")
+        if load_file == "y":
+            filename = "amor_calc_settings.txt"
+            try:
+                with open(filename) as settings:
+                    settings_str = settings.read()
+                settings_list = settings_str.split(",")
+                if len(settings_list) != 7:
+                    raise IndexError
+            except FileNotFoundError:
+                cont = input("Settings file not found. Enter 'q' to quit program or any "
+                             "other key to continue with new settings:\n")
+                if cont == "q":
+                    exit()
+                else:
+                    return get_info(False)
+            except IndexError:
+                cont = input("Settings file is in incorrect format. Enter 'q' to quit program or any "
+                             "other key to continue with new settings:\n")
+                if cont == "q":
+                    exit()
+                else:
+                    return get_info(False)
+
+            for i in range(len(settings_list)):
+                settings_list[i] = float(settings_list[i])
+
+            return settings_list
+
     accepted = False
     while not accepted:
         try:
@@ -148,6 +180,19 @@ def get_info():
             continue
         accepted = True
 
+    save_file = ""
+    while save_file != "y" and save_file != "n":
+        save_file = input("Would you like to save these settings to a file? "
+                          "(This will overwrite previous settings. y/n):\n")
+    if save_file == "y":
+        filename = "amor_calc_settings.txt"
+        settings_str = ",".join([str(price), str(price - down), str(year_rate), str(years_term),
+                                 str(pmi_cost), str(escrow_pmt), str(addl_prin)])
+        with open(filename, "w") as settings:
+            settings.write(settings_str)
+
+# TODO: add input for FHA loan and for modular extra payments
+
     return price, price - down, year_rate, years_term, pmi_cost, escrow_pmt, addl_prin
 
 
@@ -184,69 +229,69 @@ month = 0
 year = 0
 total_int = 0.0
 amor_str = ""
-# if first_payment_prin != 0:
-#     first_pay_str = f"Initial principal payment: ${first_payment_prin:.2f}; "
-# else:
-#     first_pay_str = ""
-# start_str = f"\nStarting balance: ${st_balance:.2f}; Monthly Payment: ${pmt + extra_prin + escrow + pmi:.2f}" \
-#             f"; {first_pay_str}Extra Monthly Principal Payment: ${extra_prin:.2f}."
-#
-# while balance > 0:
-#     if balance <= sale_price * .78 or pmi == 0:
-#         pmi = 0.0
-#         pmi_str = ""
-#     else:
-#         pmi_str = f"PMI: ${pmi:.2f}, "
-#     int_pmt, prin_pmt = month_breakdown(balance, int_rate, pmt)
-#     if first_payment_prin:
-#         balance = round(balance - prin_pmt - first_payment_prin, 2)
-#         extra_str = f"Additional principal: ${first_payment_prin:.2f}, "
-#         first_payment_prin = None
-#     elif int_pmt + prin_pmt < pmt:
-#         balance = round(balance - prin_pmt, 2)
-#         extra_str = ""
-#         extra_prin = 0
-#     else:
-#         balance = round(balance - prin_pmt - extra_prin, 2)
-#         if extra_prin == 0:
-#             extra_str = ""
-#         else:
-#             extra_str = f"Additional principal: ${extra_prin:.2f}, "
-#     total_int = round(total_int + int_pmt, 2)
-#     pmt_str = f"{pmt_num}-- " \
-#               f"Total Payment: ${int_pmt + prin_pmt + extra_prin + escrow + pmi:.2f} " \
-#               f"Interest: ${int_pmt:.2f}, " \
-#               f"Principal: ${prin_pmt:.2f}, " \
-#               f"{extra_str}" \
-#               f"{pmi_str}" \
-#               f"Escrow: ${escrow:.2f}, " \
-#               f"Remaining Balance: ${balance:.2f}"
-#     amor_str = "\n".join([amor_str, pmt_str])
-#     pmt_num += 1
-#     month += 1
-#     if month == 12:
-#         month = 0
-#         year += 1
-#
-# if month == 1:
-#     s = ""
-# else:
-#     s = "s"
-# finish_str = f"\nTotal Term: {year} years, {month} month{s}. Total interest paid: ${total_int:.2f}\n"
-# print(start_str)
-# print(amor_str)
-# print(finish_str)
-#
-# save_file = ""
-# while save_file != "y" and save_file != "n":
-#     save_file = input("Write results to file? (y/n):\n")
-# if save_file == "y":
-#     filename = input("Enter a file name:\n")
-#     with open(filename, "w") as write_file:
-#         write_file.write(start_str)
-#         write_file.write("\n___________________________________________________________________________________________"
-#                          "____________________________________________________________________________________________")
-#         write_file.write("\n")
-#         write_file.write(amor_str)
-#         write_file.write("\n")
-#         write_file.write(finish_str)
+if first_payment_prin != 0:
+    first_pay_str = f"Initial principal payment: ${first_payment_prin:.2f}; "
+else:
+    first_pay_str = ""
+start_str = f"\nStarting balance: ${st_balance:.2f}; Monthly Payment: ${pmt + extra_prin + escrow + pmi:.2f}" \
+            f"; {first_pay_str}Extra Monthly Principal Payment: ${extra_prin:.2f}."
+
+while balance > 0:
+    if balance <= sale_price * .78 or pmi == 0:
+        pmi = 0.0
+        pmi_str = ""
+    else:
+        pmi_str = f"PMI: ${pmi:.2f}, "
+    int_pmt, prin_pmt = month_breakdown(balance, int_rate, pmt)
+    if first_payment_prin:
+        balance = round(balance - prin_pmt - first_payment_prin, 2)
+        extra_str = f"Additional principal: ${first_payment_prin:.2f}, "
+        first_payment_prin = None
+    elif int_pmt + prin_pmt < pmt:
+        balance = round(balance - prin_pmt, 2)
+        extra_str = ""
+        extra_prin = 0
+    else:
+        balance = round(balance - prin_pmt - extra_prin, 2)
+        if extra_prin == 0:
+            extra_str = ""
+        else:
+            extra_str = f"Additional principal: ${extra_prin:.2f}, "
+    total_int = round(total_int + int_pmt, 2)
+    pmt_str = f"{pmt_num}-- " \
+              f"Total Payment: ${int_pmt + prin_pmt + extra_prin + escrow + pmi:.2f} " \
+              f"Interest: ${int_pmt:.2f}, " \
+              f"Principal: ${prin_pmt:.2f}, " \
+              f"{extra_str}" \
+              f"{pmi_str}" \
+              f"Escrow: ${escrow:.2f}, " \
+              f"Remaining Balance: ${balance:.2f}"
+    amor_str = "\n".join([amor_str, pmt_str])
+    pmt_num += 1
+    month += 1
+    if month == 12:
+        month = 0
+        year += 1
+
+if month == 1:
+    s = ""
+else:
+    s = "s"
+finish_str = f"\nTotal Term: {year} years, {month} month{s}. Total interest paid: ${total_int:.2f}\n"
+print(start_str)
+print(amor_str)
+print(finish_str)
+
+save_file = ""
+while save_file != "y" and save_file != "n":
+    save_file = input("Write results to file? (y/n):\n")
+if save_file == "y":
+    filename = input("Enter a file name:\n")
+    with open(filename, "w") as write_file:
+        write_file.write(start_str)
+        write_file.write("\n___________________________________________________________________________________________"
+                         "____________________________________________________________________________________________")
+        write_file.write("\n")
+        write_file.write(amor_str)
+        write_file.write("\n")
+        write_file.write(finish_str)
