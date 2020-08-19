@@ -1,4 +1,11 @@
 def get_info(settings_file=True):
+    """
+    Retrieves all necessary information from the either the user through prompts or from a previously saved settings
+    file.
+    :param settings_file: bool - assumes there is a file available unless the file is not found and then get_info is
+        called recursively with this parameter as False
+    :return: list of 7 floats and a bool used to determine monthly payments
+    """
     if settings_file:
         load_file = ""
         while load_file != "y" and load_file != "n":
@@ -9,7 +16,7 @@ def get_info(settings_file=True):
                 with open(filename) as settings:
                     settings_str = settings.read()
                 settings_list = settings_str.split(",")
-                if len(settings_list) != 7:
+                if len(settings_list) != 8:
                     raise IndexError
             except FileNotFoundError:
                 cont = input("Settings file not found. Enter 'q' to quit program or any "
@@ -26,8 +33,12 @@ def get_info(settings_file=True):
                 else:
                     return get_info(False)
 
-            for i in range(len(settings_list)):
+            for i in range(len(settings_list) - 1):
                 settings_list[i] = float(settings_list[i])
+            if settings_list[-1] == "True":
+                settings_list[-1] = True
+            else:
+                settings_list[-1] = False
 
             return settings_list
 
@@ -126,12 +137,12 @@ def get_info(settings_file=True):
     while not accepted:
         try:
             years_term = input("What is the term of the loan (in years)?\n")
-            if int(years_term) < 0 or int(years_term) != float(years_term):
+            if float(years_term) < 0 or int(years_term) != float(years_term):
                 raise ValueError
         except ValueError:
             print("Input must be a positive whole number only, please try again.\n")
             continue
-        years_term = int(years_term)
+        years_term = float(years_term)
         if years_term != 15 and years_term != 30:
             confirm = input("You have entered a term other than 15 or 30 years, "
                             "is this correct? (enter 'y' for yes)\n").lower()
@@ -180,6 +191,14 @@ def get_info(settings_file=True):
             continue
         accepted = True
 
+    fha_check = None
+    while fha_check != "y" and fha_check != "n":
+        fha_check = input("Is this an FHA loan? (y/n):\n").lower()
+    if fha_check == "y":
+        fha_loan = True
+    else:
+        fha_loan = False
+
     save_file = ""
     while save_file != "y" and save_file != "n":
         save_file = input("Would you like to save these settings to a file? "
@@ -187,16 +206,22 @@ def get_info(settings_file=True):
     if save_file == "y":
         filename = "amor_calc_settings.txt"
         settings_str = ",".join([str(price), str(price - down), str(year_rate), str(years_term),
-                                 str(pmi_cost), str(escrow_pmt), str(addl_prin)])
+                                 str(pmi_cost), str(escrow_pmt), str(addl_prin), str(fha_loan)])
         with open(filename, "w") as settings:
             settings.write(settings_str)
 
-# TODO: add input for FHA loan and for modular extra payments
 
-    return price, price - down, year_rate, years_term, pmi_cost, escrow_pmt, addl_prin
+    return price, price - down, year_rate, years_term, pmi_cost, escrow_pmt, addl_prin, fha_loan
 
 
 def calc_payment(loan_amount, year_rate, years_term):
+    """
+    Calculates the monthly payment based on the term in years and the annual interest
+    :param loan_amount: float
+    :param year_rate: float
+    :param years_term: float
+    :return: The monthly payment as a total of principal and interest
+    """
     month_rate = year_rate / 12 / 100
     months_term = years_term * 12
     payment = loan_amount * (month_rate * (1 + month_rate) ** months_term) / ((1 + month_rate) ** months_term - 1)
@@ -204,6 +229,13 @@ def calc_payment(loan_amount, year_rate, years_term):
 
 
 def month_breakdown(principal, rate, payment):
+    """
+    Calculates how much of each month's payment goes toward principal and interest
+    :param principal: float
+    :param rate: float
+    :param payment: float
+    :return: The amount paid toward interest and the amount applied to the principal balance
+    """
     int_pmt = round(principal * (rate * .01) / 12, 2)
     prin_pmt = round(payment - int_pmt, 2)
     if prin_pmt > principal:
@@ -211,43 +243,29 @@ def month_breakdown(principal, rate, payment):
     return int_pmt, prin_pmt
 
 
-sale_price, st_balance, int_rate, term, pmi, escrow, extra_prin = get_info()
+sale_price, st_balance, int_rate, term, pmi, escrow, extra_prin, fha = get_info()
 balance = st_balance
 pmt = calc_payment(st_balance, int_rate, term)
-# 505.90
-# sale_price = 154900.0
-# st_balance = 147155.0
-# balance = st_balance
-# int_rate = 2.75
-# pmt = 600.75
-# escrow = 294.31
-first_payment_prin = 0.0
-# extra_prin = 0.0
-# pmi = 53.96
 pmt_num = 1
 month = 0
 year = 0
 total_int = 0.0
 amor_str = ""
-if first_payment_prin != 0:
-    first_pay_str = f"Initial principal payment: ${first_payment_prin:.2f}; "
-else:
-    first_pay_str = ""
-start_str = f"\nStarting balance: ${st_balance:.2f}; Monthly Payment: ${pmt + extra_prin + escrow + pmi:.2f}" \
-            f"; {first_pay_str}Extra Monthly Principal Payment: ${extra_prin:.2f}."
+
+start_str = f"\nStarting balance: ${st_balance:.2f}; Monthly Payment: ${pmt:.2f}" \
+            f"; Extra Monthly Principal Payment: ${extra_prin:.2f}."
 
 while balance > 0:
-    if balance <= sale_price * .78 or pmi == 0:
-        pmi = 0.0
-        pmi_str = ""
+    if not fha:
+        if balance <= sale_price * .78 or pmi == 0:
+            pmi = 0.0
+            pmi_str = ""
+        else:
+            pmi_str = f"PMI: ${pmi:.2f}, "
     else:
         pmi_str = f"PMI: ${pmi:.2f}, "
     int_pmt, prin_pmt = month_breakdown(balance, int_rate, pmt)
-    if first_payment_prin:
-        balance = round(balance - prin_pmt - first_payment_prin, 2)
-        extra_str = f"Additional principal: ${first_payment_prin:.2f}, "
-        first_payment_prin = None
-    elif int_pmt + prin_pmt < pmt:
+    if round(int_pmt + prin_pmt, 2) < pmt:
         balance = round(balance - prin_pmt, 2)
         extra_str = ""
         extra_prin = 0
