@@ -1,6 +1,6 @@
 def get_info(settings_file=True):
     """
-    Retrieves all necessary information from the either the user through prompts or from a previously saved settings
+    Retrieves all necessary information from either the user through prompts or from a previously saved settings
     file.
     :param settings_file: bool - assumes there is a file available unless the file is not found and then get_info is
         called recursively with this parameter as False
@@ -210,7 +210,6 @@ def get_info(settings_file=True):
         with open(filename, "w") as settings:
             settings.write(settings_str)
 
-
     return price, price - down, year_rate, years_term, pmi_cost, escrow_pmt, addl_prin, fha_loan
 
 
@@ -220,7 +219,7 @@ def calc_payment(loan_amount, year_rate, years_term):
     :param loan_amount: float
     :param year_rate: float
     :param years_term: float
-    :return: The monthly payment as a total of principal and interest
+    :return: The monthly payment as a total of principal and interest: float
     """
     month_rate = year_rate / 12 / 100
     months_term = years_term * 12
@@ -234,7 +233,7 @@ def month_breakdown(principal, rate, payment):
     :param principal: float
     :param rate: float
     :param payment: float
-    :return: The amount paid toward interest and the amount applied to the principal balance
+    :return: The amount paid toward interest and the amount applied to the principal balance: float, float
     """
     int_pmt = round(principal * (rate * .01) / 12, 2)
     prin_pmt = round(payment - int_pmt, 2)
@@ -304,8 +303,8 @@ save_file = ""
 while save_file != "y" and save_file != "n":
     save_file = input("Write results to file? (y/n):\n")
 if save_file == "y":
-    filename = input("Enter a file name:\n")
-    with open(filename, "w") as write_file:
+    w_filename = input("Enter a file name:\n")
+    with open(w_filename, "w") as write_file:
         write_file.write(start_str)
         write_file.write("\n___________________________________________________________________________________________"
                          "____________________________________________________________________________________________")
