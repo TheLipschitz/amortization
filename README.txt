@@ -6,5 +6,5 @@ The user can enter their own numbers for each prompt (if you aren't sure of a nu
 Escrow, you can guess or just enter 0, as these will not affect the loan itself), or can modify the provided example settings file 
 to load them all at once. 
 
-Please note that the person who wrote this code is not a financial adviser and is in no way affiliated with any financial
+Please note that the person who wrote this code is not a financial advisor and is in no way affiliated with any financial
 institution. This is simply a tool for personal use to acheive a more detailed idea of a mortgage while shopping for a new home.
